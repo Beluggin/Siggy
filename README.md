@@ -71,8 +71,8 @@ deliberately doesn't live here.
 - **Preference layer** — the system developing *its own* tastes (the "wanting" leg
   of the thesis): the slow integral of what it keeps coming back to, surviving
   restarts and model swaps.
-- Memory-recall and parser hardening, cross-model "voice" evaluation, and a pile
-  of fixes captured in `DEVLOG.md`.
+- Memory-recall and parser hardening, cross-model "voice" evaluation, and a long
+  tail of fixes from the development log.
 
 ---
 
@@ -102,6 +102,18 @@ Agency* (figshare) — and a pending Canadian patent (**CIPO Application No.
 3,304,098**, filed March 2026).
 
 Built solo, self-taught, entirely through chat interfaces and a terminal.
+
+---
+
+## The deep dive — by invitation
+
+This repository is the showcase: the working overlay, enough to read the
+architecture and run it. The full story lives a layer deeper and is shared with
+collaborators, reviewers, and serious inquiries by invitation — the dated design
+log (`DEVLOG`), the durable architecture notes, the autonomous self-evolution
+loop, and the parts of the moat that aren't public for a reason.
+
+If you've read this far and want to see under the hood, reach out below.
 
 ---
 
