@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalBot — Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0a0a0f;
+    --surface: #111118;
+    --surface2:#16161f;
+    --border:  #1e1e2e;
+    --accent:  #00ff9d;
+    --accent2: #ff3c6e;
+    --text:    #e2e2f0;
+    --muted:   #555570;
+    --mono:    'Space Mono', monospace;
+    --display: 'Syne', sans-serif;
+    {{ theme_css }}
+  }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,157,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+  }
+  .nav-brand {
+    font-family: var(--display); font-weight: 800;
+    font-size: 1.1rem; color: var(--accent);
+  }
+  .nav-brand span { color: var(--muted); font-weight: 400; font-size: 0.75rem; margin-left: 0.75rem; }
+  .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .nav-links a:hover { color: var(--accent); border-color: var(--accent); background: rgba(0,255,157,0.06); }
+  .nav-links a.active { color: var(--accent); border-color: var(--accent); background: rgba(0,255,157,0.1); }
+  .nav-links a.admin-link { color: var(--accent2); }
+  .nav-links a.admin-link:hover { color: #ff6b91; border-color: var(--accent2); background: rgba(255,60,110,0.07); }
+  .nav-links a.game-link { color: var(--warn); }
+  .nav-links a.game-link:hover { color: var(--warn); border-color: var(--warn); background: rgba(255,204,0,0.08); }
+
+  /* ── CHAT AREA ── */
+  .chat-wrap {
+    position: relative; z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 0;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+  }
+  .bot-avatar {
+    width: 36px; height: 36px;
+    border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; font-size: 0.8rem;
+    color: var(--accent);
+  }
+  .bot-name {
+    font-family: var(--display); font-weight: 700; font-size: 1rem;
+  }
+  .bot-status {
+    font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .bot-status .dot {
+    display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); margin-right: 0.3rem;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .error-banner {
+    background: rgba(255,60,110,0.07);
+    border: 1px solid rgba(255,60,110,0.25);
+    border-left: 3px solid var(--accent2);
+    padding: 0.6rem 1rem;
+    font-size: 0.7rem;
+    color: var(--accent2);
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  /* messages */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .msg {
+    display: flex;
+    gap: 0.75rem;
+    animation: msgin 0.25s ease;
+  }
+  @keyframes msgin {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 28px; height: 28px; flex-shrink: 0;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 700; color: var(--muted);
+    font-family: var(--display);
+    align-self: flex-end;
+  }
+  .msg.bot .msg-avatar { border-color: var(--accent); color: var(--accent); }
+
+  .msg-body { max-width: 75%; }
+  .msg-sender {
+    font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.3rem;
+  }
+  .msg.user .msg-sender { text-align: right; }
+  .msg-bubble {
+    padding: 0.75rem 1rem;
+    line-height: 1.6;
+    font-size: 0.82rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.bot .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 0;
+    color: var(--text);
+  }
+  .msg.user .msg-bubble {
+    background: rgba(0,255,157,0.08);
+    border: 1px solid rgba(0,255,157,0.25);
+    color: var(--text);
+    text-align: right;
+  }
+  .msg-time {
+    font-size: 0.58rem; color: var(--muted);
+    margin-top: 0.3rem;
+  }
+  .msg.user .msg-time { text-align: right; }
+
+  /* typing indicator */
+  .typing-indicator { display: none; padding-left: 0.25rem; }
+  .typing-indicator.show { display: flex; gap: 0.75rem; align-items: flex-end; }
+  .typing-avatar {
+    width: 28px; height: 28px; flex-shrink: 0;
+    border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 700; color: var(--accent);
+    font-family: var(--display);
+  }
+  .typing-dots {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    display: flex; gap: 0.3rem; align-items: center;
+  }
+  .typing-dots span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--muted);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: translateY(0); }
+    40%          { transform: translateY(-5px); }
+  }
+
+  /* input area */
+  .input-area {
+    flex-shrink: 0;
+    padding: 1rem 0 1.5rem;
+    display: flex; gap: 0.75rem;
+  }
+  #chat-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+    max-height: 120px;
+  }
+  #chat-input:focus { border-color: var(--accent); }
+  #send-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 1.5rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  #send-btn:hover { background: #00e88a; }
+  #send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+  /* image attach button — matches input border, not the loud accent */
+  #attach-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 1.1rem;
+    padding: 0 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+  }
+  #attach-btn:hover { border-color: var(--accent); }
+  /* selected-image preview chip, sits above the input row */
+  .img-preview {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.5rem 0;
+  }
+  .img-preview img {
+    max-height: 64px; max-width: 120px;
+    border: 1px solid var(--border);
+    object-fit: cover;
+  }
+  .img-preview button {
+    background: none; border: none; color: var(--muted);
+    font-family: var(--mono); font-size: 0.7rem; cursor: pointer;
+  }
+  .img-preview button:hover { color: var(--accent); }
+
+  /* model selector */
+  .model-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 0.75rem; flex-shrink: 0;
+  }
+  .model-row label {
+    font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  #model-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.3rem 0.6rem;
+    outline: none;
+    cursor: pointer;
+  }
+  #model-select:focus { border-color: var(--accent); }
+  .tank-toggle {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    margin-left: 0.8rem; font-size: 0.72rem; color: var(--muted);
+    cursor: pointer; user-select: none;
+  }
+  #tank-status { font-size: 0.72rem; margin-left: 0.3rem; }
+  #model-status {
+    font-size: 0.6rem; color: var(--muted); margin-left: 0.25rem;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">SIGNALBOT <span>HOME BASE</span></div>
+  <div class="nav-links">
+    <a href="/">Dashboard</a>
+    <a href="/chat" class="active">Chat</a>
+    <a href="/game" class="game-link">Flappy</a>
+    <a href="/candy-wars" class="game-link">Candy Wars</a>
+    {% if role == 'admin' %}
+    <a href="/admin" class="admin-link">Admin</a>
+    {% endif %}
+    <a href="/logout">Logout</a>
+    {% include 'theme_picker.html' %}
+  </div>
+</nav>
+
+<div class="chat-wrap">
+  <div class="chat-header">
+    <div class="bot-avatar">SB</div>
+    <div>
+      <div class="bot-name">SignalBot</div>
+      <div class="bot-status"><span class="dot"></span><span id="status-text">Online</span></div>
+    </div>
+  </div>
+
+  <div class="model-row">
+    <label for="model-select">Model:</label>
+    <select id="model-select">
+      {% for key, cfg in models.items() %}
+      <option value="{{ key }}" {% if current_model == key %}selected{% endif %}>{{ cfg.label }}</option>
+      {% endfor %}
+    </select>
+    <span id="model-status"></span>
+    <label class="tank-toggle" title="Route motor commands to the tank (drive forward, turn left, stop…)">
+      <input type="checkbox" id="tank-toggle" {% if tank_mode %}checked{% endif %}>
+      🤖 Tank
+    </label>
+    <span id="tank-status"></span>
+    <label class="tank-toggle" title="Let SignalBot start conversations about goals it's been thinking about (rate-capped, off by default)">
+      <input type="checkbox" id="initiative-toggle" {% if initiative_on %}checked{% endif %}>
+      💭 Initiative
+    </label>
+    <span id="initiative-status"></span>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="messages" id="messages">
+    <!-- Welcome message -->
+    <div class="msg bot">
+      <div class="msg-avatar">SB</div>
+      <div class="msg-body">
+        <div class="msg-sender">SignalBot</div>
+        <div class="msg-bubble">Hey {{ user }}. What's on your mind? (type ? for commands)</div>
+        <div class="msg-time" id="init-time"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Typing indicator lives OUTSIDE messages div to avoid insertBefore issues -->
+  <div class="typing-indicator" id="typing">
+    <div class="typing-avatar">SB</div>
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <!-- image preview chip — hidden until a pic is picked -->
+  <div id="img-preview" class="img-preview" style="display:none;"></div>
+
+  <div class="input-area">
+    <input type="file" id="img-input" accept="image/*" style="display:none;">
+    <button id="attach-btn" title="Attach image">📷</button>
+    <textarea id="chat-input" placeholder="Send a message…" rows="1"></textarea>
+    <button id="send-btn">SEND</button>
+  </div>
+</div>
+
+<script>
+  document.getElementById('init-time').textContent = new Date().toLocaleTimeString();
+
+  const modelSelect = document.getElementById('model-select');
+  const modelStatus = document.getElementById('model-status');
+
+  modelSelect.addEventListener('change', async () => {
+    const chosen = modelSelect.value;
+    modelStatus.textContent = 'switching...';
+    try {
+      const res = await fetch('/api/set-model', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: chosen})
+      });
+      const d = await res.json();
+      modelStatus.textContent = d.ok ? '✓' : (d.error || 'error');
+      setTimeout(() => { modelStatus.textContent = ''; }, 2000);
+    } catch(e) {
+      modelStatus.textContent = 'failed';
+    }
+  });
+
+  // Tank routing toggle — when on, motor commands drive the tank instead of chatting
+  const tankToggle = document.getElementById('tank-toggle');
+  const tankStatus = document.getElementById('tank-status');
+  if (tankToggle) {
+    tankToggle.addEventListener('change', async () => {
+      tankStatus.textContent = '…';
+      try {
+        const res = await fetch('/api/set-tank-mode', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({on: tankToggle.checked})
+        });
+        const d = await res.json();
+        tankStatus.textContent = d.tank_mode ? '🟢 driving' : 'off';
+        setTimeout(() => { tankStatus.textContent = ''; }, 2500);
+      } catch(e) { tankStatus.textContent = 'failed'; }
+    });
+  }
+
+  // Initiative toggle — opt-in for daemon-initiated messages (persisted per user)
+  const initToggle = document.getElementById('initiative-toggle');
+  const initStatus = document.getElementById('initiative-status');
+  if (initToggle) {
+    initToggle.addEventListener('change', async () => {
+      initStatus.textContent = '…';
+      try {
+        const res = await fetch('/api/set-initiative', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({on: initToggle.checked})
+        });
+        const d = await res.json();
+        initStatus.textContent = d.initiative ? '🟢 listening' : 'off';
+        setTimeout(() => { initStatus.textContent = ''; }, 2500);
+      } catch(e) { initStatus.textContent = 'failed'; }
+    });
+  }
+
+  const messagesEl = document.getElementById('messages');
+  const inputEl    = document.getElementById('chat-input');
+  const sendBtn    = document.getElementById('send-btn');
+  const typingEl   = document.getElementById('typing');
+  const errorEl    = document.getElementById('error-banner');
+  const statusEl   = document.getElementById('status-text');
+  const USER_NAME  = "{{ user }}";
+
+  function scrollBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ── chat persistence — survive back-button / refresh via localStorage ──
+  const CHAT_STORE_KEY = `sb_chat_${USER_NAME}`;
+  const CHAT_STORE_MAX = 200;  // cap so localStorage never bloats
+
+  function loadChatStore() {
+    try { return JSON.parse(localStorage.getItem(CHAT_STORE_KEY)) || []; }
+    catch (e) { return []; }
+  }
+
+  function saveChatEntry(sender, text, isUser, time) {
+    try {
+      const store = loadChatStore();
+      store.push({sender, text, isUser, time});
+      // drop oldest beyond the cap
+      localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(store.slice(-CHAT_STORE_MAX)));
+    } catch (e) { /* storage full/blocked — chat still works, just won't persist */ }
+  }
+
+  function addMessage(sender, text, isUser, time, persist = true) {
+    const when = time || new Date().toLocaleTimeString();
+    const msg = document.createElement('div');
+    msg.className = `msg ${isUser ? 'user' : 'bot'}`;
+    const initial = isUser ? USER_NAME.charAt(0).toUpperCase() : 'SB';
+    const escaped = escapeHtml(text);
+    msg.innerHTML = `
+      <div class="msg-avatar">${initial}</div>
+      <div class="msg-body">
+        <div class="msg-sender">${escapeHtml(sender)}</div>
+        <div class="msg-bubble">${escaped}</div>
+        <div class="msg-time">${when}</div>
+      </div>
+    `;
+    messagesEl.appendChild(msg);
+    scrollBottom();
+    if (persist) saveChatEntry(sender, text, isUser, when);
+  }
+
+  // replay saved chat on page load (persist=false so we don't re-save)
+  loadChatStore().forEach(m => addMessage(m.sender, m.text, m.isUser, m.time, false));
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.style.display = 'block';
+    setTimeout(() => { errorEl.style.display = 'none'; }, 8000);
+  }
+
+  let sending = false;
+
+  // ── image attach state ──
+  const imgInput   = document.getElementById('img-input');
+  const attachBtn  = document.getElementById('attach-btn');
+  const imgPreview = document.getElementById('img-preview');
+  let selectedImage = null;  // raw base64 (no data: prefix), ready for Ollama
+
+  attachBtn.addEventListener('click', () => imgInput.click());
+
+  const MAX_EDGE = 1024;  // longest side after downscale — plenty for vision, tiny upload
+
+  imgInput.addEventListener('change', () => {
+    const file = imgInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Downscale in-browser BEFORE upload: a raw phone photo is ~10MB and stalls
+      // the phone→server leg over Tailscale. Re-encode to a ~150KB JPEG instead.
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, MAX_EDGE / Math.max(width, height));  // never upscale
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);  // small, JPEG magic bytes
+        selectedImage = dataUrl.split(',')[1];                // strip prefix for Ollama
+        imgPreview.innerHTML =
+          `<img src="${dataUrl}" alt="attached"><button id="img-clear">✕ remove</button>`;
+        imgPreview.style.display = 'flex';
+        document.getElementById('img-clear').addEventListener('click', clearImage);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function clearImage() {
+    selectedImage = null;
+    imgInput.value = '';
+    imgPreview.innerHTML = '';
+    imgPreview.style.display = 'none';
+  }
+
+  // Read the NDJSON stream from /api/chat. Frames: {t:'token',v}, {t:'ping'},
+  // {t:'end',reply,timestamp}. Tokens append live to one bot bubble; the end
+  // frame reconciles the full text + timestamp and persists it once.
+  async function readChatStream(res) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', acc = '', bubble = null, timeEl = null;
+
+    function ensureBubble() {
+      if (bubble) return;
+      typingEl.classList.remove('show');   // first byte arrived — drop "typing…"
+      const msg = document.createElement('div');
+      msg.className = 'msg bot';
+      msg.innerHTML = `
+        <div class="msg-avatar">SB</div>
+        <div class="msg-body">
+          <div class="msg-sender">SignalBot</div>
+          <div class="msg-bubble"></div>
+          <div class="msg-time"></div>
+        </div>`;
+      messagesEl.appendChild(msg);
+      bubble = msg.querySelector('.msg-bubble');
+      timeEl = msg.querySelector('.msg-time');
+      scrollBottom();
+    }
+
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let ev;
+        try { ev = JSON.parse(line); } catch (e) { continue; }
+        if (ev.t === 'token') {
+          ensureBubble();
+          acc += ev.v;
+          bubble.textContent = acc;   // textContent auto-escapes — safe
+          scrollBottom();
+        } else if (ev.t === 'end') {
+          ensureBubble();
+          acc = ev.reply || acc;
+          bubble.textContent = acc;
+          const when = ev.timestamp || new Date().toLocaleTimeString();
+          if (timeEl) timeEl.textContent = when;
+          saveChatEntry('SignalBot', acc, false, when);   // persist once, at the end
+          scrollBottom();
+        }
+        // ev.t === 'ping' → connection heartbeat, nothing to render
+      }
+    }
+    // Safety net: stream closed mid-flight with text but no end frame.
+    if (bubble && !timeEl?.textContent) {
+      const when = new Date().toLocaleTimeString();
+      if (timeEl) timeEl.textContent = when;
+      saveChatEntry('SignalBot', acc, false, when);
+    }
+  }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if ((!text && !selectedImage) || sending) return;
+
+    sending = true;
+    inputEl.value = '';
+    inputEl.style.height = '';
+    sendBtn.disabled = true;
+    statusEl.textContent = 'Thinking...';
+
+    // Show user message immediately
+    addMessage(USER_NAME, text, true);
+
+    // Show typing indicator
+    typingEl.classList.add('show');
+    scrollBottom();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(selectedImage ? {message: text, image: selectedImage} : {message: text})
+      });
+
+      const ctype = res.headers.get('content-type') || '';
+
+      if (ctype.includes('ndjson')) {
+        // Streamed turn — render tokens live (keeps Cloudflare's 100s cap happy).
+        await readChatStream(res);
+      } else {
+        // Plain JSON turn — commands / roblox / tank / errors.
+        typingEl.classList.remove('show');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.error || `Server error (${res.status})`;
+          showError(errMsg);
+          addMessage('SignalBot', `[Error: ${errMsg}]`, false);
+        } else {
+          const d = await res.json();
+          if (d.error) {
+            showError(d.error);
+            addMessage('SignalBot', `[Error: ${d.error}]`, false);
+          } else {
+            addMessage('SignalBot', d.reply, false);
+          }
+        }
+      }
+    } catch(e) {
+      typingEl.classList.remove('show');
+      showError('Connection lost. Is the server running?');
+      addMessage('SignalBot', '[Connection error — check the server]', false);
+    }
+
+    statusEl.textContent = 'Online';
+    sendBtn.disabled = false;
+    sending = false;
+    clearImage();   // pic has been sent — reset the chip
+    inputEl.focus();
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  // Auto-resize textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = '';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  });
+
+  inputEl.focus();
+  scrollBottom();
+
+  // ── Initiative poll loop (lane 1) ──
+  // Every 45s, ask the server if the daemon wants to say something.
+  // The server returns null unless the toggle is on AND a candidate
+  // cleared every dispatcher guardrail — so this stays cheap.
+  // Skipped while a reply is in flight to never interleave mid-turn.
+  async function pollInitiative() {
+    if (sending) return;
+    if (initToggle && !initToggle.checked) return;
+    try {
+      const res = await fetch('/api/initiative');
+      const d = await res.json();
+      if (d && d.message) {
+        addMessage('SignalBot 💭', d.message, false);
+      }
+    } catch(e) { /* server down or logged out — silently skip this tick */ }
+  }
+  setInterval(pollInitiative, 45000);
+</script>
+</body>
+</html>

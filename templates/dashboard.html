@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalBot — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0a0a0f;
+    --surface: #111118;
+    --surface2:#16161f;
+    --border:  #1e1e2e;
+    --accent:  #00ff9d;
+    --accent2: #ff3c6e;
+    --warn:    #ffcc00;
+    --text:    #e2e2f0;
+    --muted:   #555570;
+    --mono:    'Space Mono', monospace;
+    --display: 'Syne', sans-serif;
+    {{ theme_css }}
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,157,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.9);
+    backdrop-filter: blur(8px);
+  }
+  .nav-brand {
+    font-family: var(--display); font-weight: 800;
+    font-size: 1.1rem; color: var(--accent);
+  }
+  .nav-brand span { color: var(--muted); font-weight: 400; font-size: 0.75rem; margin-left: 0.75rem; }
+  .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .nav-links a:hover { color: var(--accent); border-color: var(--accent); background: rgba(0,255,157,0.06); }
+  .nav-links a.active { color: var(--accent); border-color: var(--accent); background: rgba(0,255,157,0.1); }
+  .nav-links a.admin-link { color: var(--accent2); }
+  .nav-links a.admin-link:hover { color: #ff6b91; border-color: var(--accent2); background: rgba(255,60,110,0.07); }
+  .nav-links a.game-link { color: var(--warn); }
+  .nav-links a.game-link:hover { color: var(--warn); border-color: var(--warn); background: rgba(255,204,0,0.08); }
+  .nav-user { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; }
+  .nav-user strong { color: var(--text); }
+
+  /* ── MAIN ── */
+  main {
+    position: relative; z-index: 1;
+    flex: 1; padding: 2rem;
+    max-width: 1100px; width: 100%; margin: 0 auto;
+  }
+  .page-header {
+    margin-bottom: 2rem;
+    display: flex; align-items: baseline; gap: 1rem;
+  }
+  .page-header h1 {
+    font-family: var(--display); font-weight: 700;
+    font-size: 1.4rem; color: var(--text);
+  }
+  .page-header .ts {
+    font-size: 0.65rem; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ── STAT CARDS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    animation: cardin 0.5s ease both;
+  }
+  .stat-card:nth-child(2) { animation-delay: 0.05s; }
+  .stat-card:nth-child(3) { animation-delay: 0.1s; }
+  .stat-card:nth-child(4) { animation-delay: 0.15s; }
+  .stat-card:nth-child(5) { animation-delay: 0.2s; }
+  @keyframes cardin {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: -1px; right: -1px;
+    width: 8px; height: 8px;
+    border-top: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
+  }
+  .stat-label {
+    font-size: 0.6rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+  .stat-value {
+    font-family: var(--display); font-weight: 700;
+    font-size: 1.6rem; color: var(--text); line-height: 1;
+  }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.warn   { color: var(--warn); }
+  .stat-value.danger { color: var(--accent2); }
+  .stat-sub { font-size: 0.6rem; color: var(--muted); margin-top: 0.4rem; }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: var(--display); font-size: 1rem; font-weight: 700;
+    color: var(--accent);
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── COGNITIVE STATE PANEL ── */
+  .cog-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .cog-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: -1px;
+    width: 8px; height: 8px;
+    border-bottom: 2px solid var(--accent);
+    border-left: 2px solid var(--accent);
+  }
+  .cog-title {
+    font-size: 0.6rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .cog-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 2rem; }
+  @media (max-width: 600px) { .cog-bars { grid-template-columns: 1fr; } }
+
+  .cog-row { display: flex; align-items: center; gap: 0.75rem; }
+  .cog-label {
+    font-size: 0.65rem; color: var(--muted);
+    min-width: 90px; text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .cog-track {
+    flex: 1; height: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .cog-fill {
+    position: absolute; top: 0; left: 0; height: 100%;
+    transition: width 0.6s ease, background 0.4s ease;
+  }
+  .cog-fill.green  { background: var(--accent); }
+  .cog-fill.yellow { background: var(--warn); }
+  .cog-fill.red    { background: var(--accent2); }
+  .cog-num {
+    font-size: 0.7rem; font-weight: 700;
+    min-width: 32px; text-align: right;
+  }
+
+  /* ── BOTTOM GRID ── */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 700px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .panel-header {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title {
+    font-size: 0.65rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .panel-body { padding: 1rem 1.25rem; }
+
+  .activity-list { list-style: none; }
+  .activity-list li {
+    display: flex; gap: 1rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+  .activity-list li:last-child { border-bottom: none; }
+  .act-time { color: var(--muted); min-width: 42px; flex-shrink: 0; }
+  .act-event { color: var(--text); word-break: break-word; }
+
+  .quick-links { display: flex; flex-direction: column; gap: 0.75rem; }
+  .quick-link {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.85rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--text);
+    font-size: 0.8rem;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .quick-link:hover { border-color: var(--accent); background: rgba(0,255,157,0.05); }
+  .quick-link .arr { color: var(--accent); font-size: 0.75rem; }
+  .quick-link.disabled {
+    opacity: 0.35; pointer-events: none;
+  }
+  .quick-link.disabled .arr { color: var(--muted); }
+
+  .live-badge {
+    display: inline-block;
+    font-size: 0.55rem; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 0.2rem 0.5rem;
+    border: 1px solid var(--accent); color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">SIGNALBOT <span>HOME BASE</span></div>
+  <div class="nav-links">
+    <a href="/" class="active">Dashboard</a>
+    <a href="/chat">Chat</a>
+    <a href="/game" class="game-link">Flappy</a>
+    <a href="/candy-wars" class="game-link">Candy Wars</a>
+    {% if is_admin %}
+    <a href="/admin" class="admin-link">Admin</a>
+    {% endif %}
+    <a href="/logout">Logout</a>
+    {% include 'theme_picker.html' %}
+  </div>
+  <div class="nav-user">Logged in as <strong>{{ user }}</strong></div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>System Overview</h1>
+    <span class="ts" id="live-clock"></span>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Bot Status</div>
+      <div class="stat-value" id="stat-status">—</div>
+      <div class="stat-sub" id="stat-backend"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Your Messages</div>
+      <div class="stat-value accent" id="stat-msgs">—</div>
+      <div class="stat-sub">total in memory</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Indelible Facts</div>
+      <div class="stat-value accent" id="stat-facts">—</div>
+      <div class="stat-sub">things I'll never forget</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Archive Episodes</div>
+      <div class="stat-value" id="stat-archive">—</div>
+      <div class="stat-sub">compressed memories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cognitive State</div>
+      <div class="stat-value accent" id="stat-cog">—</div>
+      <div class="stat-sub" id="stat-cog-sub"></div>
+    </div>
+  </div>
+
+  <!-- Cognitive State Bars -->
+  <div class="cog-panel">
+    <div class="cog-title">Cognitive State Vector</div>
+    <div class="cog-bars" id="cog-bars">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+  <!-- Bottom Panels -->
+  <div class="bottom-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Recent Conversations</span>
+        <span class="live-badge">live</span>
+      </div>
+      <div class="panel-body">
+        <ul class="activity-list" id="activity-list">
+          <li><span class="act-time">—</span><span class="act-event">Loading…</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Quick Access</span>
+      </div>
+      <div class="panel-body">
+        <div class="quick-links">
+          <a href="/chat" class="quick-link">
+            <span>Chat with SignalBot</span>
+            <span class="arr">→</span>
+          </a>
+          {% if is_admin %}
+          <a href="/admin" class="quick-link">
+            <span>God Mode — Admin Panel</span>
+            <span class="arr">→</span>
+          </a>
+          {% endif %}
+          <a href="#" class="quick-link disabled">
+            <span>Memory Viewer</span>
+            <span class="arr">coming soon</span>
+          </a>
+          <a href="#" class="quick-link disabled">
+            <span>Cognitive State Inspector</span>
+            <span class="arr">coming soon</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Clock
+  const clockEl = document.getElementById('live-clock');
+  const tick = () => { clockEl.textContent = new Date().toLocaleTimeString(); };
+  tick(); setInterval(tick, 1000);
+
+  // Color for bar based on value and dimension
+  function barColor(dim, val) {
+    if (dim === 'frustration' || dim === 'cognitive_load') {
+      return val > 0.7 ? 'red' : val > 0.4 ? 'yellow' : 'green';
+    }
+    return val > 0.6 ? 'green' : val > 0.3 ? 'yellow' : 'red';
+  }
+
+  function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+  }
+
+  // Status + cognitive state
+  async function loadStatus() {
+    try {
+      const res = await fetch('/api/status');
+      const d = await res.json();
+
+      // Bot status
+      document.getElementById('stat-status').innerHTML = d.bot_online
+        ? '<span class="status-badge"><span class="status-dot"></span>ONLINE</span>'
+        : '<span style="color:var(--accent2)">OFFLINE</span>';
+      document.getElementById('stat-backend').textContent = '✓ ' + (d.model || 'live');
+
+      // Counts
+      document.getElementById('stat-msgs').textContent = d.messages_total || '0';
+      document.getElementById('stat-facts').textContent = d.indelible_facts || '0';
+      document.getElementById('stat-archive').textContent = d.archive_episodes || '0';
+
+      // Cognitive state label
+      document.getElementById('stat-cog').textContent = d.cognitive_state || '—';
+      document.getElementById('stat-cog-sub').textContent =
+        d.user ? `for ${d.user}` : '';
+
+      // Cognitive state bars
+      if (d.cognitive_detail) {
+        const barsEl = document.getElementById('cog-bars');
+        const dims = [
+          ['curiosity', 'Curiosity'],
+          ['frustration', 'Frustration'],
+          ['confidence', 'Confidence'],
+          ['engagement', 'Engagement'],
+          ['identity_adherence', 'Identity'],
+          ['cognitive_load', 'Cog Load'],
+        ];
+
+        // Add tone dimensions if present
+        if (d.cognitive_detail.tone_playful !== undefined) {
+          dims.push(
+            ['tone_playful', 'Playful'],
+            ['tone_formal', 'Formal'],
+            ['tone_concise', 'Concise'],
+            ['tone_warm', 'Warm'],
+          );
+        }
+
+        barsEl.innerHTML = dims.map(([key, label]) => {
+          const val = d.cognitive_detail[key];
+          if (val === undefined || val === null) return '';
+          const pct = Math.round(val * 100);
+          const color = barColor(key, val);
+          return `
+            <div class="cog-row">
+              <span class="cog-label">${label}</span>
+              <div class="cog-track">
+                <div class="cog-fill ${color}" style="width:${pct}%"></div>
+              </div>
+              <span class="cog-num" style="color:var(--${color === 'green' ? 'accent' : color === 'red' ? 'accent2' : 'warn'})">${val.toFixed(2)}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch(e) {
+      document.getElementById('stat-status').textContent = 'ERR';
+    }
+  }
+
+  // Activity
+  async function loadActivity() {
+    try {
+      const res = await fetch('/api/activity');
+      const d = await res.json();
+      const ul = document.getElementById('activity-list');
+      ul.innerHTML = d.events.map(e =>
+        `<li><span class="act-time">${escapeHtml(e.time)}</span><span class="act-event">${escapeHtml(e.event)}</span></li>`
+      ).join('');
+    } catch(e) {}
+  }
+
+  loadStatus();
+  loadActivity();
+  setInterval(loadStatus, 10000);
+  setInterval(loadActivity, 20000);
+</script>
+</body>
+</html>

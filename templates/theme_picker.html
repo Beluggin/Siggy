@@ -1,0 +1,102 @@
+<!-- templates/theme_picker.html -->
+
+
+<div class="theme-picker">
+  <button class="theme-toggle" onclick="document.getElementById('theme-dropdown').classList.toggle('open')" title="Theme">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+  </button>
+  <div class="theme-dropdown" id="theme-dropdown">
+    <div class="theme-section">
+      <div class="theme-section-label">Accent</div>
+      <div class="theme-swatches">
+        <button class="swatch {% if theme_accent=='green' %}active{% endif %}" style="background:#00ff9d" onclick="setTheme('green','')"></button>
+        <button class="swatch {% if theme_accent=='blue' %}active{% endif %}" style="background:#4dabf7" onclick="setTheme('blue','')"></button>
+        <button class="swatch {% if theme_accent=='purple' %}active{% endif %}" style="background:#b197fc" onclick="setTheme('purple','')"></button>
+        <button class="swatch {% if theme_accent=='pink' %}active{% endif %}" style="background:#f783ac" onclick="setTheme('pink','')"></button>
+        <button class="swatch {% if theme_accent=='orange' %}active{% endif %}" style="background:#ffa94d" onclick="setTheme('orange','')"></button>
+        <button class="swatch {% if theme_accent=='red' %}active{% endif %}" style="background:#ff6b6b" onclick="setTheme('red','')"></button>
+        <button class="swatch {% if theme_accent=='cyan' %}active{% endif %}" style="background:#3bc9db" onclick="setTheme('cyan','')"></button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-section-label">Background</div>
+      <div class="theme-swatches">
+        <button class="swatch bg {% if theme_bg=='dark' %}active{% endif %}" style="background:#0a0a0f" onclick="setTheme('','dark')" title="Dark"></button>
+        <button class="swatch bg {% if theme_bg=='midnight' %}active{% endif %}" style="background:#0b0d1a" onclick="setTheme('','midnight')" title="Midnight"></button>
+        <button class="swatch bg {% if theme_bg=='charcoal' %}active{% endif %}" style="background:#121212" onclick="setTheme('','charcoal')" title="Charcoal"></button>
+        <button class="swatch bg {% if theme_bg=='abyss' %}active{% endif %}" style="background:#050508" onclick="setTheme('','abyss')" title="Abyss"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .theme-picker { position: relative; }
+  .theme-toggle {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .theme-dropdown {
+    display: none; position: absolute; top: 100%; right: 0;
+    margin-top: 0.5rem; background: var(--surface);
+    border: 1px solid var(--border); padding: 0.75rem;
+    min-width: 180px; z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .theme-dropdown.open { display: block; }
+
+  .theme-section { margin-bottom: 0.6rem; }
+  .theme-section:last-child { margin-bottom: 0; }
+  .theme-section-label {
+    font-size: 0.55rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  .theme-swatches { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+  .swatch {
+    width: 22px; height: 22px; border: 2px solid transparent;
+    cursor: pointer; transition: border-color 0.15s, transform 0.1s;
+    padding: 0;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active { border-color: var(--text); }
+  .swatch.bg { border: 2px solid var(--border); }
+  .swatch.bg.active { border-color: var(--text); }
+</style>
+
+<script>
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dd = document.getElementById('theme-dropdown');
+    const picker = e.target.closest('.theme-picker');
+    if (!picker && dd) dd.classList.remove('open');
+  });
+
+  async function setTheme(accent, bg) {
+    const body = {};
+    if (accent) body.accent = accent;
+    if (bg) body.bg = bg;
+
+    try {
+      const res = await fetch('/api/theme', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const d = await res.json();
+      if (d.ok) {
+        // Reload to apply new theme from server
+        location.reload();
+      }
+    } catch(e) {
+      console.error('Theme save failed:', e);
+    }
+  }
+</script>

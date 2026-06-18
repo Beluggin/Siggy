@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalBot — First Run Setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #111118;
+    --border:   #1e1e2e;
+    --accent:   #00ff9d;
+    --accent2:  #ff3c6e;
+    --text:     #e2e2f0;
+    --muted:    #555570;
+    --mono:     'Space Mono', monospace;
+    --display:  'Syne', sans-serif;
+  }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--mono);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridscroll 20s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes gridscroll { from { background-position: 0 0; } to { background-position: 40px 40px; } }
+
+  .setup-box {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 2.5rem 3rem; width: 100%; max-width: 480px;
+    position: relative; animation: fadein 0.5s ease;
+  }
+  @keyframes fadein { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .setup-box::before, .setup-box::after {
+    content: ''; position: absolute; width: 14px; height: 14px;
+    border-color: var(--accent); border-style: solid;
+  }
+  .setup-box::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .setup-box::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+  .logo { font-family: var(--display); font-weight: 800; font-size: 1.8rem; color: var(--accent); margin-bottom: 0.25rem; }
+  .tagline { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1.5rem; }
+
+  .step-label {
+    font-family: var(--display); font-weight: 700; font-size: 0.85rem;
+    color: var(--accent); margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+  }
+
+  .explanation {
+    font-size: 0.75rem; color: var(--muted); line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block; font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 0.9rem;
+    padding: 0.75rem 1rem; outline: none; transition: border-color 0.2s;
+    margin-bottom: 1.25rem;
+  }
+  input:focus { border-color: var(--accent); }
+
+  button {
+    width: 100%; background: var(--accent); color: #000; border: none;
+    font-family: var(--mono); font-weight: 700; font-size: 0.85rem;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 0.85rem;
+    cursor: pointer; transition: background 0.15s, transform 0.1s;
+  }
+  button:hover { background: #00e88a; }
+  button:active { transform: scale(0.98); }
+
+  .error {
+    font-size: 0.75rem; color: var(--accent2); margin-bottom: 1rem;
+    padding: 0.5rem 0.75rem; border-left: 2px solid var(--accent2);
+    background: rgba(255,60,110,0.07);
+  }
+</style>
+</head>
+<body>
+<div class="setup-box">
+  <div class="logo">SIGNALBOT</div>
+  <div class="tagline">First Run Setup</div>
+
+  <div class="step-label">Create Your Admin Account</div>
+  <div class="explanation">
+    This is your god mode account. You'll be able to see all users,
+    manage permissions, and monitor conversations. Your existing
+    SignalBot data will be migrated into this account.
+  </div>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST">
+    <label for="name">Your name</label>
+    <input type="text" id="name" name="name" placeholder="Adam" autocomplete="off" required>
+
+    <label for="passphrase">Pick a passphrase</label>
+    <input type="password" id="passphrase" name="passphrase" placeholder="something memorable" required>
+
+    <button type="submit">CREATE ADMIN ACCOUNT →</button>
+  </form>
+</div>
+</body>
+</html>

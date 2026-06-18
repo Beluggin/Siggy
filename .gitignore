@@ -1,0 +1,96 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+xiaor/.venv/
+*.json.tmp
+
+# Runtime data — not source code
+memory_log.json
+memory_archive.json
+cognitive_state.json
+indelible_facts.json
+user_registry.json
+signalbot_telemetry.json
+signalbot_telemetry.jsonl
+signalbot_telemetry.json.migrated
+users/
+imgui.ini
+
+# Evolve loop runtime files — auto-generated, change every cycle
+capability_gaps.json
+evolution_journal.json
+goals_registry.json
+problem_queue.json
+problem_queue_archive.json
+DAY_COUNT
+
+# Chatroom transcript
+room.jsonl
+
+# OmniAddress runtime stores and generated corpora
+omniaddress_store.json
+omniaddress_vocab.json
+omni_phase1_corpus.jsonl
+omni_phase1_corpus.canon.jsonl
+# Trained model weights — ~1GB each, never commit (disk-safety: see 2026-05-28 crash)
+# Glob catches every variant (_v3_1, _v3_2, …) so new training runs can't slip through.
+omniaddress_model*/
+model_backups/
+*.safetensors
+*.pt
+*.pth
+*.gguf
+*.bin
+*.ckpt
+# Versioned + experimental corpora (regenerable via corpus1.py)
+omni_phase1_corpus.v2.jsonl
+omni_phase1_corpus.v3.jsonl
+omni_phase1_corpus.combined.jsonl
+omni_phase1_corpus.rich69_baseline.jsonl
+# Training / generation logs and run artifacts
+*.log
+omni_results*.txt
+
+# Game scores
+game_scores.json
+
+# Battery output — runtime data
+battery_results_*.json
+_battery_snapshot/
+
+# Verbatim user-input log (speech-harvest source — user data)
+verbatim_log.jsonl
+
+# Vision debug/test image artifacts (not source — regenerable / per-upload)
+debug_last_upload.jpg
+bus.jpg
+
+# session-cookie signing key (never commit)
+.secret_key
+
+# size-inflation baselines (local measurement, throwaway)
+size_snapshots/
+
+# Runnable old-code clones — confusing in public, never push (see Cerberus note)
+snapshots/
+
+# Runtime caches / debug dumps / scratch — not source
+gradient_embed_cache.json
+debug_last_prompt.txt
+recall_heat.json
+ladder_log.jsonl
+ladder_state.json
+spawn_log.jsonl
+spawn_state.json
+*.bak-*
+
+# Personal images / scratch docs — keep out of a public repo
+*.jpg
+*.jpeg
+*.png
+Untitled Document*
